@@ -24,7 +24,7 @@ class Car {
 			// input sensors
 			// middle hidden 6 nodes
 			// 4 output nodes for movements
-			this.brain = new NeuralNetwork([this.sensor.rayCount, 6, 6, 4])
+			this.brain = new NeuralNetwork([this.sensor.rayCount, 6, 4])
 		}
 
 		this.controls = new Controls(controlType)
