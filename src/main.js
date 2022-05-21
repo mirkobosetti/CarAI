@@ -20,7 +20,7 @@ function animate() {
 	ctx.save()
 	ctx.translate(0, -car.y + canvas.height * 0.7)
 	road.draw(ctx)
-	for (let i = 0; i < traffic.length; i++) traffic[i].draw(ctx, "red")
+	for (let i = 0; i < traffic.length; i++) traffic[i].draw(ctx, "black")
 	car.draw(ctx, "blue")
 	ctx.restore()
 	requestAnimationFrame(animate)
