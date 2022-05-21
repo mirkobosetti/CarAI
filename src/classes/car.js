@@ -16,7 +16,16 @@ class Car {
 
 		this.damaged = false
 
-		if (controlType == 'KEYS') this.sensor = new Sensor(this)
+		this.useBrain = controlType == 'AI'
+
+		if (controlType !== 'DUMMY') {
+			this.sensor = new Sensor(this)
+
+			// input sensors
+			// middle hidden 6 nodes
+			// 4 output nodes for movements
+			this.brain = new NeuralNetwork([this.sensor.rayCount, 6, 4])
+		}
 
 		this.controls = new Controls(controlType)
 	}
@@ -28,7 +37,18 @@ class Car {
 			this.damaged = this.#assessDamage(roadBorders, traffic)
 		}
 
-		if (this.sensor) this.sensor.update(roadBorders, traffic)
+		if (this.sensor) {
+			this.sensor.update(roadBorders, traffic)
+			const offset = this.sensor.readings.map((s) => (s == null ? 0 : 1 - s.offset))
+			const outputs = NeuralNetwork.feedForward(offset, this.brain)
+
+			if (this.useBrain) {
+				this.controls.up = outputs[0]
+				this.controls.left = outputs[1]
+				this.controls.right = outputs[2]
+				this.controls.down = outputs[3]
+			}
+		}
 	}
 
 	#createPolygon() {
