@@ -7,7 +7,26 @@
 body {
 	background-color: #555;
 	overflow: hidden;
-	text-align: center;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+#verticalButtons {
+	display: flex;
+	flex-direction: column;
+}
+
+button {
+	border: 0;
+	border-radius: 5px;
+	padding: 5px;
+	margin: 5px;
+	cursor: pointer;
+}
+
+button:hover {
+	background-color: lightgreen;
 }
 
 #mainCanvas {
