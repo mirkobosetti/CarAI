@@ -13,3 +13,6 @@ body {
 #mainCanvas {
 	background-color: lightslategray;
 }
+#networkCanvas {
+	background-color: black;
+}
