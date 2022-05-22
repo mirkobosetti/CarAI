@@ -1,5 +1,6 @@
 class Car {
-	constructor(x, y, width, height, controlType, maxForwardSpeed = 1) {
+	constructor(id, x, y, width, height, controlType, maxForwardSpeed = 1) {
+		this.id = id
 		this.x = x
 		this.y = y
 		this.width = width
@@ -15,6 +16,8 @@ class Car {
 		this.angle = 0
 
 		this.damaged = false
+
+		this.wasBest = false
 
 		this.useBrain = controlType == 'AI'
 
@@ -33,8 +36,29 @@ class Car {
 	update(roadBorders, traffic) {
 		if (!this.damaged) {
 			this.#move()
+
+			// if this car is too far from the bestcar, it will be destroyed
+			if (this.y > bestCar.y + mainCanvas.height / 2) {
+				cars = cars.filter((c) => c.id != this.id)
+			}
+
 			this.polygon = this.#createPolygon()
 			this.damaged = this.#assessDamage(roadBorders, traffic)
+
+			if (this.damaged) {
+				// if all the remaininsg cars are damaged and wasBest is true, then the game is over, save and reload the page
+				if (
+					cars.filter((f) => f.damaged).length == cars.length &&
+					cars.filter((f) => f.wasBest).length == cars.length
+				) {
+					save()
+					window.location.reload()
+				}
+			}
+
+			if (bestCar.id == this.id) this.wasBest = true
+		} else {
+			if (!this.wasBest) cars = cars.filter((c) => c.id != this.id)
 		}
 
 		if (this.sensor) {
@@ -129,5 +153,101 @@ class Car {
 		ctx.fill()
 
 		if (this.sensor && showSensors) this.sensor.draw(ctx)
+	}
+
+	/**
+	 * TODO:
+	 * generates a car array
+	 * @param {number} carCount the number of cars to create
+	 * @param {number} laneCount the number of road lanes
+	 * @returns {Car[]} the created cars
+	 */
+	static generateTrafficArray(carCount, laneCount) {
+		const traffic = []
+
+		for (let i = 0; i < count; i++) {
+			const x = Math.random() * mainCanvas.width
+			const y = Math.random() * mainCanvas.height
+			const angle = Math.random() * 2 * Math.PI
+			const speed = Math.random() * 5
+			const color = '#' + Math.floor(Math.random() * 16777215).toString(16)
+
+			traffic.push(new Car(x, y, angle, speed, color, 'DUMMY'))
+		}
+
+		return traffic
+	}
+
+	/**
+	 * generates a car array used for training
+	 * @returns {Car[]} the created cars
+	 */
+	static generateTrainingTraffic() {
+		const visualizer = [
+			[' ', 'X', 'X'],
+			[' ', ' ', ' '],
+			[' ', ' ', ' '],
+			[' ', 'X', 'X'],
+			[' ', ' ', ' '],
+			[' ', ' ', ' '],
+			['X', 'X', ' '],
+			[' ', ' ', ' '],
+			[' ', ' ', ' '],
+			['X', 'X', ' '],
+			[' ', ' ', ' '],
+			[' ', ' ', ' '],
+			[' ', ' ', 'X'],
+			[' ', ' ', ' '],
+			[' ', ' ', ' '],
+			['X', 'X', ' '],
+			[' ', ' ', ' '],
+			[' ', ' ', ' '],
+			[' ', 'X', 'X'],
+			[' ', ' ', ' '],
+			[' ', ' ', ' '],
+			['X', ' ', 'X'],
+			[' ', ' ', ' '],
+			[' ', ' ', ' '],
+			['X', 'X', ' '],
+			[' ', ' ', ' '],
+			[' ', ' ', ' '],
+			['X', ' ', 'X'],
+			[' ', ' ', ' '],
+			[' ', ' ', ' '],
+			[' ', 'X', 'X'],
+			[' ', ' ', ' '],
+			[' ', ' ', ' '],
+			[' ', 'X', ' '],
+			[' ', ' ', ' '],
+			[' ', ' ', ' '],
+			['X', ' ', ' '],
+			[' ', ' ', ' '],
+			[' ', ' ', ' '],
+			[' ', 'X', ' '],
+			[' ', ' ', ' '],
+			[' ', ' ', ' '],
+			[' ', ' ', 'X'],
+			[' ', ' ', ' '],
+			[' ', ' ', ' '],
+			[' ', 'X', ' '],
+			[' ', ' ', ' '],
+			[' ', ' ', ' '],
+			['X', ' ', 'X']
+		].reverse()
+
+		const traffic = []
+
+		let distanceToDraw = -100
+		const distanceEachPiece = 75
+		for (const piece of visualizer) {
+			for (const [i, lane] of piece.entries()) {
+				if (lane == 'X')
+					traffic.push(new Car(undefined, road.getLaneCenter(i), distanceToDraw, 30, 50, 'DUMMY'))
+			}
+
+			distanceToDraw -= distanceEachPiece
+		}
+
+		return traffic
 	}
 }
