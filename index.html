@@ -6,15 +6,102 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="description" content="Self-driving car simulation using neural networks and genetic algorithms" />
 		<title>CarAI - Neural Network Car Simulation</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+			rel="stylesheet"
+		/>
 		<link rel="stylesheet" href="/src/style.css" />
 	</head>
 	<body>
-		<canvas id="mainCanvas"></canvas>
-		<div id="verticalButtons">
-			<button onclick="save()">💾</button>
-			<button onclick="discard()">🗑️</button>
+		<!-- Header -->
+		<header class="header">
+			<div class="header-content">
+				<h1 class="title">🚗 CarAI</h1>
+				<p class="subtitle">Neural Network Self-Driving Simulation</p>
+			</div>
+		</header>
+
+		<!-- Main Container -->
+		<div class="container">
+			<!-- Left Panel - Statistics -->
+			<aside class="stats-panel">
+				<div class="panel-section">
+					<h3 class="panel-title">📊 Statistics</h3>
+					<div class="stat-item">
+						<span class="stat-label">Active Cars</span>
+						<span class="stat-value" id="activeCars">0</span>
+					</div>
+					<div class="stat-item">
+						<span class="stat-label">Generation</span>
+						<span class="stat-value" id="generation">1</span>
+					</div>
+					<div class="stat-item">
+						<span class="stat-label">Best Distance</span>
+						<span class="stat-value" id="bestDistance">0m</span>
+					</div>
+					<div class="stat-item">
+						<span class="stat-label">Best Speed</span>
+						<span class="stat-value" id="bestSpeed">0</span>
+					</div>
+					<div class="stat-item status-indicator" id="statusIndicator">
+						<span class="stat-label">Status</span>
+						<span class="stat-value status-text" id="statusText">Running</span>
+					</div>
+				</div>
+
+				<div class="panel-section">
+					<h3 class="panel-title">🎮 Controls</h3>
+					<button class="btn btn-primary" id="pauseBtn">
+						<span id="pauseIcon">⏸️</span> <span id="pauseText">Pause</span>
+					</button>
+					<button class="btn btn-secondary" id="resetBtn">🔄 Reset</button>
+
+					<div class="speed-control">
+						<label class="control-label">Simulation Speed</label>
+						<div class="speed-buttons">
+							<button class="btn-speed" data-speed="0.5">0.5x</button>
+							<button class="btn-speed active" data-speed="1">1x</button>
+							<button class="btn-speed" data-speed="2">2x</button>
+							<button class="btn-speed" data-speed="5">5x</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="panel-section">
+					<h3 class="panel-title">🧠 Neural Network</h3>
+					<button class="btn btn-success" id="saveBtn">💾 Save Best Brain</button>
+					<button class="btn btn-danger" id="discardBtn">🗑️ Discard Saved</button>
+					<div class="info-box">
+						<p class="info-text" id="brainStatus">No saved brain</p>
+					</div>
+				</div>
+
+				<div class="panel-section">
+					<h3 class="panel-title">ℹ️ Info</h3>
+					<div class="info-box">
+						<p class="info-text-small">
+							<strong>How it works:</strong><br />
+							Cars use neural networks to make decisions. The best performing car's brain is saved and
+							mutated to create the next generation.
+						</p>
+					</div>
+				</div>
+			</aside>
+
+			<!-- Center - Simulation Canvas -->
+			<main class="canvas-container">
+				<canvas id="mainCanvas"></canvas>
+			</main>
+
+			<!-- Right Panel - Network Visualization -->
+			<aside class="network-panel">
+				<h3 class="panel-title">🧬 Neural Network Visualization</h3>
+				<canvas id="networkCanvas"></canvas>
+			</aside>
 		</div>
-		<canvas id="networkCanvas"></canvas>
+
 		<script type="module" src="/src/main.js"></script>
 	</body>
 </html>

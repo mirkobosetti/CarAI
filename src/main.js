@@ -10,46 +10,183 @@ const networkCanvas = document.getElementById('networkCanvas')
 const LANE_NUMBER = 3
 
 mainCanvas.width = (LANE_NUMBER * 200) / 3
-networkCanvas.width = 1000
+networkCanvas.width = 300
 
 const mainCtx = mainCanvas.getContext('2d')
 const networkCtx = networkCanvas.getContext('2d')
 
 const road = new Road(mainCanvas.width / 2, mainCanvas.width * 0.9, LANE_NUMBER)
 
-//single car
-//const car = new Car(road.getLaneCenter(1), 100, 30, 50, "AI", 2)
+// Simulation state
+let isPaused = false
+let simulationSpeed = 1
+let generation = parseInt(localStorage.getItem('generation') || '1')
+let maxDistance = 0
+let startTime = Date.now()
+let lastBestCarY = 0
+let stuckFrameCount = 0
+const STUCK_THRESHOLD = 300 // frames senza progressi prima del reset (circa 5 secondi a 60fps)
+const MIN_PROGRESS = 5 // distanza minima di progresso richiesta
 
 const CARS_NUMBER = 100
 let cars = generateCars(CARS_NUMBER)
 
-const traffic = Car.generateTrainingTraffic(road)
+let traffic = Car.generateTrainingTraffic(road)
 let bestCar = cars[0]
 
+// UI Elements
+const activeCarsEl = document.getElementById('activeCars')
+const generationEl = document.getElementById('generation')
+const bestDistanceEl = document.getElementById('bestDistance')
+const bestSpeedEl = document.getElementById('bestSpeed')
+const brainStatusEl = document.getElementById('brainStatus')
+const statusIndicatorEl = document.getElementById('statusIndicator')
+const statusTextEl = document.getElementById('statusText')
+const pauseBtn = document.getElementById('pauseBtn')
+const resetBtn = document.getElementById('resetBtn')
+const saveBtn = document.getElementById('saveBtn')
+const discardBtn = document.getElementById('discardBtn')
+const speedButtons = document.querySelectorAll('.btn-speed')
+
+// Load saved brain if exists
 if (localStorage.getItem('bestBrain')) {
 	for (let i = 0; i < cars.length; i++) {
 		cars[i].brain = JSON.parse(localStorage.getItem('bestBrain'))
-		// '{"levels":[{"inputs":[0.09764936386930201,0,0,0,0.00041374638894509097,0.47240345819951646,0.6242288176614202],"outputs":[0,0,0,0,1,0],"biases":[0.24212929486190507,0.18592749224026311,0.013792745206689563,0.16663806125260294,-0.26207731579783855,-0.15040056913462055],"weights":[[0.010613551983208291,-0.028507769282051607,-0.0026395975482612286,-0.07363031246418299,0.2085665519606857,0.07005309009881647],[-0.04026178908493407,-0.006333515667094697,-0.14151438596195468,0.035442374054057875,0.07309879159874791,0.060673097286006214],[0.1428651311140286,0.016388117957291795,-0.06805888456512216,0.06682609795642011,-0.10923097704524865,0.059236417044965885],[0.045504308099139454,-0.016240276854901772,0.3112407233333609,-0.18459223387740978,-0.25674502905272345,-0.03926902305834818],[0.3024693158183226,-0.0650123686925858,-0.2456829975983251,0.10305935228514657,0.1454102896250556,-0.1734427108723822],[-0.267198284583658,0.08936242511284626,0.1576685264265242,-0.03495580893502688,0.1444080256948702,-0.4433295021164399],[0.2873948836795747,0.11229882369867156,-0.11815759888824298,-0.07495523187248714,0.028214202043506012,0.06745200620125527]]},{"inputs":[0,0,0,0,1,0],"outputs":[1,1,0,0],"biases":[-0.17479432796057123,0.09435697474044329,0.030344765993626916,0.00594017232825788],"weights":[[0.042395473762716074,0.055062930349392025,-0.03707861910932077,0.2312705614040806],[0.256039114085133,-0.29227228431716956,-0.22414676718984874,-0.09101066226868176],[-0.24427387592178687,0.12509936602652988,-0.08145749736130534,0.05300053655926726],[-0.037212346553172584,0.08081821027306457,-0.09530821848719755,-0.1072901561814697],[0.14990574428693312,0.16706033020270467,-0.026252257140039925,-0.2275646549240563],[0.24554685241164276,-0.08028838949214231,0.17599993973324135,0.04836117274964141]]}]}'
 
 		// for all the cars except the best one
 		if (i != 0) {
 			NeuralNetwork.mutate(cars[i].brain, 0.05)
 		}
 	}
+	updateBrainStatus(true)
+} else {
+	updateBrainStatus(false)
 }
+
+// Event Listeners
+pauseBtn.addEventListener('click', togglePause)
+resetBtn.addEventListener('click', reset)
+saveBtn.addEventListener('click', save)
+discardBtn.addEventListener('click', discard)
+
+speedButtons.forEach(btn => {
+	btn.addEventListener('click', (e) => {
+		const speed = parseFloat(e.target.dataset.speed)
+		setSimulationSpeed(speed)
+	})
+})
+
+// Initialize UI
+generationEl.textContent = generation
+updateStats()
 
 animate()
 
-// Expose functions globally for buttons
-window.save = save
-window.discard = discard
+function togglePause() {
+	isPaused = !isPaused
+	const pauseIcon = document.getElementById('pauseIcon')
+	const pauseText = document.getElementById('pauseText')
+	
+	if (isPaused) {
+		pauseIcon.textContent = '▶️'
+		pauseText.textContent = 'Resume'
+	} else {
+		pauseIcon.textContent = '⏸️'
+		pauseText.textContent = 'Pause'
+	}
+}
+
+function setSimulationSpeed(speed) {
+	simulationSpeed = speed
+	speedButtons.forEach(btn => {
+		btn.classList.toggle('active', parseFloat(btn.dataset.speed) === speed)
+	})
+}
+
+function reset() {
+	cars = generateCars(CARS_NUMBER)
+	traffic = Car.generateTrainingTraffic(road)
+	bestCar = cars[0]
+	maxDistance = 0
+	startTime = Date.now()
+	lastBestCarY = 0
+	stuckFrameCount = 0
+	
+	// Reset status indicator
+	statusIndicatorEl.classList.remove('stuck')
+	statusIndicatorEl.style.borderLeftColor = ''
+	statusTextEl.classList.remove('stuck')
+	statusTextEl.style.color = ''
+	statusTextEl.textContent = '✅ Running'
+	
+	if (localStorage.getItem('bestBrain')) {
+		for (let i = 0; i < cars.length; i++) {
+			cars[i].brain = JSON.parse(localStorage.getItem('bestBrain'))
+			if (i != 0) {
+				NeuralNetwork.mutate(cars[i].brain, 0.05)
+			}
+		}
+	}
+	
+	generation++
+	localStorage.setItem('generation', generation)
+	generationEl.textContent = generation
+	
+	if (isPaused) {
+		togglePause()
+	}
+}
 
 function save() {
 	localStorage.setItem('bestBrain', JSON.stringify(bestCar.brain))
+	updateBrainStatus(true)
+	
+	// Show feedback
+	saveBtn.textContent = '✅ Saved!'
+	setTimeout(() => {
+		saveBtn.innerHTML = '💾 Save Best Brain'
+	}, 2000)
 }
 
 function discard() {
 	localStorage.removeItem('bestBrain')
+	localStorage.removeItem('generation')
+	generation = 1
+	generationEl.textContent = generation
+	updateBrainStatus(false)
+	
+	// Show feedback
+	discardBtn.textContent = '✅ Discarded!'
+	setTimeout(() => {
+		discardBtn.innerHTML = '🗑️ Discard Saved'
+	}, 2000)
+	
+	// Reset with new random brains
+	setTimeout(reset, 500)
+}
+
+function updateBrainStatus(hasBrain) {
+	if (hasBrain) {
+		brainStatusEl.textContent = '✅ Brain loaded'
+		brainStatusEl.style.color = 'var(--accent-green)'
+	} else {
+		brainStatusEl.textContent = 'No saved brain'
+		brainStatusEl.style.color = 'var(--text-secondary)'
+	}
+}
+
+function updateStats() {
+	const aliveCars = cars.filter(car => !car.damaged).length
+	activeCarsEl.textContent = aliveCars
+	
+	const distance = Math.abs(Math.round(bestCar.y / 10))
+	if (distance > maxDistance) {
+		maxDistance = distance
+	}
+	bestDistanceEl.textContent = `${maxDistance}m`
+	
+	const speed = Math.abs(Math.round(bestCar.speed * 50))
+	bestSpeedEl.textContent = speed
 }
 
 function generateCars(n) {
@@ -61,48 +198,112 @@ function generateCars(n) {
 }
 
 function animate(time) {
-	for (let i = 0; i < traffic.length; i++) traffic[i].update(road.borders, [])
+	// Apply simulation speed and pause
+	if (!isPaused) {
+		for (let speedStep = 0; speedStep < simulationSpeed; speedStep++) {
+			for (let i = 0; i < traffic.length; i++) {
+				traffic[i].update(road.borders, [])
+			}
 
-	for (let i = 0; i < cars.length; i++) {
-		cars[i].update(road.borders, traffic)
+			for (let i = 0; i < cars.length; i++) {
+				cars[i].update(road.borders, traffic)
+			}
+
+			// fitness - trova la macchina migliore
+			bestCar = cars.find((car) => car.y == Math.min(...cars.map((m) => m.y)))
+
+			// Controlla se le auto sono bloccate/ferme
+			const currentProgress = Math.abs(bestCar.y - lastBestCarY)
+			
+			if (currentProgress < MIN_PROGRESS) {
+				stuckFrameCount++
+				
+				// Aggiorna UI per mostrare che le auto sono bloccate
+				if (stuckFrameCount > 60) { // Mostra dopo 1 secondo
+					statusIndicatorEl.classList.add('stuck')
+					statusTextEl.classList.add('stuck')
+					statusTextEl.textContent = '⚠️ Stuck'
+				}
+			} else {
+				stuckFrameCount = 0
+				lastBestCarY = bestCar.y
+				
+				// Reset UI
+				statusIndicatorEl.classList.remove('stuck')
+				statusTextEl.classList.remove('stuck')
+				statusTextEl.textContent = '✅ Running'
+			}
+
+			// Se le auto sono ferme per troppo tempo, reset automatico
+			if (stuckFrameCount >= STUCK_THRESHOLD) {
+				console.log('🚗 Auto bloccate rilevate - Auto restart...')
+				save()
+				setTimeout(reset, 500)
+				// NON fare return qui, continua l'animazione
+			}
+
+			// Rimuovi le auto troppo lontane dalla bestCar
+			cars = cars.filter((car) => {
+				// Se la macchina è troppo lontana dalla migliore, rimuovila
+				if (car.y > bestCar.y + mainCanvas.height / 2 && !car.damaged) {
+					return false
+				}
+				// Se è danneggiata e non è mai stata la migliore, rimuovila
+				if (car.damaged && !car.wasBest) {
+					return false
+				}
+				return true
+			})
+
+			// Segna la macchina migliore
+			cars.forEach(car => {
+				if (car.id === bestCar.id) {
+					car.wasBest = true
+				}
+			})
+		}
+
+		// Controlla se tutte le auto sono ferme o danneggiate (fuori dal loop speedStep)
+		const aliveCars = cars.filter(car => !car.damaged)
+		const allCarsStuck = aliveCars.length > 0 && aliveCars.every(car => Math.abs(car.speed) < 0.1)
+		const allCarsDamaged = aliveCars.length === 0 // Nessuna auto viva = tutte danneggiate
+		
+		// Aggiorna UI se tutte le auto vive sono ferme
+		if (allCarsStuck && aliveCars.length > 0) {
+			statusIndicatorEl.classList.add('stuck')
+			statusTextEl.classList.add('stuck')
+			statusTextEl.textContent = '⏳ Finishing'
+		}
+		
+		// Se tutte le auto sono danneggiate O tutte le auto vive sono ferme per un po'
+		if (allCarsDamaged || (allCarsStuck && stuckFrameCount > 120)) {
+			console.log('🏁 Generazione completata - Passaggio alla prossima...')
+			console.log(`📊 Migliore distanza: ${Math.abs(Math.round(bestCar.y / 10))}m`)
+			console.log(`🚗 Auto vive: ${aliveCars.length}`)
+			
+			// Mostra feedback
+			statusIndicatorEl.classList.remove('stuck')
+			statusIndicatorEl.style.borderLeftColor = 'var(--accent-green)'
+			statusTextEl.classList.remove('stuck')
+			statusTextEl.style.color = 'var(--accent-green)'
+			statusTextEl.textContent = '✅ Gen Done'
+			
+			save()
+			setTimeout(reset, 1000)
+			// NON fare return qui, continua l'animazione
+		}
 	}
 
-	// fitness - trova la macchina migliore
-	bestCar = cars.find((car) => car.y == Math.min(...cars.map((m) => m.y)))
+	// Update statistics
+	updateStats()
 
-	// Rimuovi le auto troppo lontane dalla bestCar
-	cars = cars.filter((car) => {
-		// Se la macchina è troppo lontana dalla migliore, rimuovila
-		if (car.y > bestCar.y + mainCanvas.height / 2 && !car.damaged) {
-			return false
-		}
-		// Se è danneggiata e non è mai stata la migliore, rimuovila
-		if (car.damaged && !car.wasBest) {
-			return false
-		}
-		return true
-	})
-
-	// Segna la macchina migliore
-	cars.forEach(car => {
-		if (car.id === bestCar.id) {
-			car.wasBest = true
-		}
-	})
-
-	// Se tutte le auto rimanenti sono danneggiate e sono state la migliore, salva e ricarica
-	if (cars.length > 0 && cars.every(car => car.damaged && car.wasBest)) {
-		save()
-		window.location.reload()
-		return
-	}
-
-	mainCanvas.height = window.innerHeight
-	networkCanvas.height = window.innerHeight
+	mainCanvas.height = window.innerHeight - 120 // Account for header
+	networkCanvas.height = 400
 
 	mainCtx.save()
 	mainCtx.translate(0, -bestCar.y + mainCanvas.height * 0.7)
 	road.draw(mainCtx)
+	
 	for (let i = 0; i < traffic.length; i++) {
 		//if the car is outside the visible area, teleport it forwards
 		if (traffic[i].y > bestCar.y + window.innerHeight) {
