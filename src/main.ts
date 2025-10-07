@@ -82,7 +82,7 @@ elements.resetBtn.addEventListener('click', reset)
 elements.saveBtn.addEventListener('click', save)
 elements.discardBtn.addEventListener('click', discard)
 
-elements.speedButtons.forEach(btn => {
+elements.speedButtons.forEach((btn) => {
 	btn.addEventListener('click', (e) => {
 		const speed = parseFloat((e.target as HTMLButtonElement).dataset.speed!)
 		setSimulationSpeed(speed)
@@ -242,7 +242,7 @@ function animate(time?: number): void {
 			}
 
 			// Mark best car
-			cars.forEach(car => {
+			cars.forEach((car) => {
 				if (car.id === bestCar.id) {
 					car.wasBest = true
 				}
@@ -250,8 +250,8 @@ function animate(time?: number): void {
 		}
 
 		// Check if all cars are finished
-		const aliveCars = cars.filter(car => !car.damaged)
-		const allCarsStuck = aliveCars.length > 0 && aliveCars.every(car => Math.abs(car.speed) < 0.1)
+		const aliveCars = cars.filter((car) => !car.damaged)
+		const allCarsStuck = aliveCars.length > 0 && aliveCars.every((car) => Math.abs(car.speed) < 0.1)
 		const allCarsDamaged = aliveCars.length === 0
 
 		if (allCarsStuck && aliveCars.length > 0) {
