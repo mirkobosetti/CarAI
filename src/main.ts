@@ -56,7 +56,7 @@ if (localStorage.getItem('bestBrain')) {
 
 		// for all the cars except the best one
 		if (i != 0) {
-			NeuralNetwork.mutate(cars[i]!.brain!, 0.05)
+			NeuralNetwork.mutate(cars[i]!.brain!, 0.1)
 		}
 	}
 	updateBrainStatus(true)
