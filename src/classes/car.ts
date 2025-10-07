@@ -1,10 +1,38 @@
-import { Sensor } from './sensors.js'
-import { Controls } from './controls.js'
-import { NeuralNetwork } from './network.js'
-import { polysIntersect } from './utils.js'
+import { Sensor } from './sensors'
+import { Controls, type ControlType } from './controls'
+import { NeuralNetwork } from './network'
+import { polysIntersect, type Point } from './utils'
+import type { Road } from './road'
 
 export class Car {
-	constructor(id, x, y, width, height, controlType, maxForwardSpeed = 1) {
+	id: number | undefined
+	x: number
+	y: number
+	width: number
+	height: number
+	speed: number
+	accelleration: number
+	maxForwardSpeed: number
+	maxBackwardSpeed: number
+	friction: number
+	angle: number
+	damaged: boolean
+	wasBest: boolean
+	useBrain: boolean
+	sensor?: Sensor
+	brain?: NeuralNetwork
+	controls: Controls
+	polygon: Point[]
+
+	constructor(
+		id: number | undefined,
+		x: number,
+		y: number,
+		width: number,
+		height: number,
+		controlType: ControlType,
+		maxForwardSpeed: number = 1
+	) {
 		this.id = id
 		this.x = x
 		this.y = y
@@ -26,6 +54,8 @@ export class Car {
 
 		this.useBrain = controlType == 'AI'
 
+		this.polygon = []
+
 		if (controlType !== 'DUMMY') {
 			this.sensor = new Sensor(this)
 
@@ -38,7 +68,7 @@ export class Car {
 		this.controls = new Controls(controlType)
 	}
 
-	update(roadBorders, traffic) {
+	update(roadBorders: [Point, Point][], traffic: Car[]): void {
 		if (!this.damaged) {
 			this.#move()
 			this.polygon = this.#createPolygon()
@@ -48,20 +78,20 @@ export class Car {
 		if (this.sensor) {
 			this.sensor.update(roadBorders, traffic)
 			const offset = this.sensor.readings.map((s) => (s == null ? 0 : 1 - s.offset))
-			const outputs = NeuralNetwork.feedForward(offset, this.brain)
+			const outputs = NeuralNetwork.feedForward(offset, this.brain!)
 
 			if (this.useBrain) {
-				this.controls.up = outputs[0]
-				this.controls.left = outputs[1]
-				this.controls.right = outputs[2]
-				this.controls.down = outputs[3]
+				this.controls.up = !!outputs[0]!
+				this.controls.left = !!outputs[1]!
+				this.controls.right = !!outputs[2]!
+				this.controls.down = !!outputs[3]!
 			}
 		}
 	}
 
-	#createPolygon() {
+	#createPolygon(): Point[] {
 		// 1 point for each corner of the car
-		const points = []
+		const points: Point[] = []
 		const radius = Math.hypot(this.width, this.height) / 2
 		const alpha = Math.atan2(this.width, this.height)
 
@@ -85,15 +115,15 @@ export class Car {
 		return points
 	}
 
-	#assessDamage(roadBorders, traffic) {
+	#assessDamage(roadBorders: [Point, Point][], traffic: Car[]): boolean {
 		for (let i = 0; i < roadBorders.length; i++) {
-			if (polysIntersect(this.polygon, roadBorders[i])) {
+			if (polysIntersect(this.polygon, roadBorders[i]!)) {
 				return true
 			}
 		}
 
 		for (let i = 0; i < traffic.length; i++) {
-			if (polysIntersect(this.polygon, traffic[i].polygon)) {
+			if (polysIntersect(this.polygon, traffic[i]!.polygon)) {
 				return true
 			}
 		}
@@ -101,7 +131,7 @@ export class Car {
 		return false
 	}
 
-	#move() {
+	#move(): void {
 		if (this.controls.up) this.speed += this.accelleration
 		if (this.controls.down) this.speed -= this.accelleration
 
@@ -123,15 +153,15 @@ export class Car {
 		this.y -= Math.cos(this.angle) * this.speed
 	}
 
-	draw(ctx, color, showSensors = false) {
+	draw(ctx: CanvasRenderingContext2D, color: string, showSensors: boolean = false): void {
 		if (this.damaged) ctx.fillStyle = 'gray'
 		else ctx.fillStyle = color
 
 		ctx.beginPath()
-		ctx.moveTo(this.polygon[0].x, this.polygon[0].y)
+		ctx.moveTo(this.polygon[0]!.x, this.polygon[0]!.y)
 
 		for (let i = 1; i < this.polygon.length; i++) {
-			ctx.lineTo(this.polygon[i].x, this.polygon[i].y)
+			ctx.lineTo(this.polygon[i]!.x, this.polygon[i]!.y)
 		}
 
 		ctx.fill()
@@ -140,34 +170,11 @@ export class Car {
 	}
 
 	/**
-	 * TODO:
-	 * generates a car array
-	 * @param {number} carCount the number of cars to create
-	 * @param {number} laneCount the number of road lanes
-	 * @returns {Car[]} the created cars
-	 */
-	static generateTrafficArray(carCount, laneCount) {
-		const traffic = []
-
-		for (let i = 0; i < count; i++) {
-			const x = Math.random() * mainCanvas.width
-			const y = Math.random() * mainCanvas.height
-			const angle = Math.random() * 2 * Math.PI
-			const speed = Math.random() * 5
-			const color = '#' + Math.floor(Math.random() * 16777215).toString(16)
-
-			traffic.push(new Car(x, y, angle, speed, color, 'DUMMY'))
-		}
-
-		return traffic
-	}
-
-	/**
 	 * generates a car array used for training
-	 * @param {Road} road the road object
-	 * @returns {Car[]} the created cars
+	 * @param road the road object
+	 * @returns the created cars
 	 */
-	static generateTrainingTraffic(road) {
+	static generateTrainingTraffic(road: Road): Car[] {
 		const visualizer = [
 			[' ', 'X', 'X'],
 			[' ', ' ', ' '],
@@ -220,7 +227,7 @@ export class Car {
 			['X', ' ', 'X']
 		].reverse()
 
-		const traffic = []
+		const traffic: Car[] = []
 
 		let distanceToDraw = -100
 		const distanceEachPiece = 75

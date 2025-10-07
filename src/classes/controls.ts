@@ -1,5 +1,12 @@
+export type ControlType = 'KEYS' | 'DUMMY' | 'AI'
+
 export class Controls {
-	constructor(type) {
+	left: boolean
+	right: boolean
+	up: boolean
+	down: boolean
+
+	constructor(type: ControlType) {
 		this.left = false
 		this.right = false
 		this.up = false
@@ -19,8 +26,8 @@ export class Controls {
 		}
 	}
 
-	#addKeyListeners() {
-		document.addEventListener('keydown', (e) => {
+	#addKeyListeners(): void {
+		document.addEventListener('keydown', (e: KeyboardEvent): void => {
 			switch (e.key) {
 				case 'ArrowLeft':
 					this.left = true
@@ -37,7 +44,7 @@ export class Controls {
 			}
 		})
 
-		document.addEventListener('keyup', (e) => {
+		document.addEventListener('keyup', (e: KeyboardEvent): void => {
 			switch (e.key) {
 				case 'ArrowLeft':
 					this.left = false

@@ -1,7 +1,16 @@
-import { lerp } from './utils.js'
+import { lerp, type Point } from './utils'
 
 export class Road {
-	constructor(x, width, lanes = 3) {
+	x: number
+	width: number
+	lanes: number
+	left: number
+	right: number
+	top: number
+	bottom: number
+	borders: [Point, Point][]
+
+	constructor(x: number, width: number, lanes: number = 3) {
 		this.x = x
 		this.width = width
 		this.lanes = lanes
@@ -13,23 +22,23 @@ export class Road {
 		this.top = -infinity
 		this.bottom = infinity
 
-		const topLeft = { x: this.left, y: this.top }
-		const topRight = { x: this.right, y: this.top }
-		const bottomLeft = { x: this.left, y: this.bottom }
-		const bottomRight = { x: this.right, y: this.bottom }
-		
+		const topLeft: Point = { x: this.left, y: this.top }
+		const topRight: Point = { x: this.right, y: this.top }
+		const bottomLeft: Point = { x: this.left, y: this.bottom }
+		const bottomRight: Point = { x: this.right, y: this.bottom }
+
 		this.borders = [
 			[topLeft, bottomLeft],
 			[topRight, bottomRight]
 		]
 	}
 
-	getLaneCenter(laneIndex) {
+	getLaneCenter(laneIndex: number): number {
 		const laneWidth = this.width / this.lanes
 		return this.left + laneWidth / 2 + Math.min(laneIndex, this.lanes - 1) * laneWidth
 	}
 
-	draw(ctx) {
+	draw(ctx: CanvasRenderingContext2D): void {
 		ctx.lineWidth = 5
 		ctx.strokeStyle = 'white'
 
@@ -45,10 +54,10 @@ export class Road {
 		}
 
 		ctx.setLineDash([])
-		this.borders.forEach(border => {
+		this.borders.forEach((border) => {
 			ctx.beginPath()
-			ctx.moveTo(border[0].x, border[0].y)
-			ctx.lineTo(border[1].x, border[1].y)
+			ctx.moveTo(border[0]!.x, border[0]!.y)
+			ctx.lineTo(border[1]!.x, border[1]!.y)
 			ctx.stroke()
 		})
 	}
