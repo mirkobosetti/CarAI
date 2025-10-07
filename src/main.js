@@ -25,6 +25,7 @@ let maxDistance = 0
 let startTime = Date.now()
 let lastBestCarY = 0
 let stuckFrameCount = 0
+let resetPending = false // Flag per evitare reset multipli in coda
 const STUCK_THRESHOLD = 300 // frames senza progressi prima del reset (circa 5 secondi a 60fps)
 const MIN_PROGRESS = 5 // distanza minima di progresso richiesta
 
@@ -104,12 +105,14 @@ function setSimulationSpeed(speed) {
 }
 
 function reset() {
+	resetPending = false // Rilascia il flag SUBITO all'inizio
+	
 	cars = generateCars(CARS_NUMBER)
 	traffic = Car.generateTrainingTraffic(road)
 	bestCar = cars[0]
 	maxDistance = 0
 	startTime = Date.now()
-	lastBestCarY = 0
+	lastBestCarY = bestCar.y // Inizializza con la posizione di partenza della bestCar
 	stuckFrameCount = 0
 	
 	// Reset status indicator
@@ -149,6 +152,8 @@ function save() {
 }
 
 function discard() {
+	if (resetPending) return // Evita reset durante un reset in corso
+	
 	localStorage.removeItem('bestBrain')
 	localStorage.removeItem('generation')
 	generation = 1
@@ -162,6 +167,7 @@ function discard() {
 	}, 2000)
 	
 	// Reset with new random brains
+	resetPending = true
 	setTimeout(reset, 500)
 }
 
@@ -234,15 +240,14 @@ function animate(time) {
 				statusTextEl.textContent = '✅ Running'
 			}
 
-			// Se le auto sono ferme per troppo tempo, reset automatico
-			if (stuckFrameCount >= STUCK_THRESHOLD) {
-				console.log('🚗 Auto bloccate rilevate - Auto restart...')
-				save()
-				setTimeout(reset, 500)
-				// NON fare return qui, continua l'animazione
-			}
-
-			// Rimuovi le auto troppo lontane dalla bestCar
+		// Se le auto sono ferme per troppo tempo, reset automatico
+		if (stuckFrameCount >= STUCK_THRESHOLD && !resetPending) {
+			resetPending = true // Setta SUBITO per evitare duplicati
+			console.log('🚗 Auto bloccate rilevate - Auto restart in 500ms...')
+			save()
+			setTimeout(reset, 500)
+			// NON fare return qui, continua l'animazione
+		}			// Rimuovi le auto troppo lontane dalla bestCar
 			cars = cars.filter((car) => {
 				// Se la macchina è troppo lontana dalla migliore, rimuovila
 				if (car.y > bestCar.y + mainCanvas.height / 2 && !car.damaged) {
@@ -276,8 +281,9 @@ function animate(time) {
 		}
 		
 		// Se tutte le auto sono danneggiate O tutte le auto vive sono ferme per un po'
-		if (allCarsDamaged || (allCarsStuck && stuckFrameCount > 120)) {
-			console.log('🏁 Generazione completata - Passaggio alla prossima...')
+		if ((allCarsDamaged || (allCarsStuck && stuckFrameCount > 120)) && !resetPending) {
+			resetPending = true // Setta SUBITO per evitare duplicati
+			console.log('🏁 Generazione completata - Passaggio alla prossima in 1s...')
 			console.log(`📊 Migliore distanza: ${Math.abs(Math.round(bestCar.y / 10))}m`)
 			console.log(`🚗 Auto vive: ${aliveCars.length}`)
 			
