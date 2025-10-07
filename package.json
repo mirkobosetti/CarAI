@@ -1,0 +1,35 @@
+{
+	"name": "carai",
+	"version": "1.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "vite preview",
+		"lint": "eslint src/**/*.js",
+		"format": "prettier --write \"src/**/*.{js,css}\""
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/mirkobosetti/CarJS.git"
+	},
+	"keywords": [
+		"neural-network",
+		"machine-learning",
+		"genetic-algorithm",
+		"car-simulation",
+		"ai"
+	],
+	"author": "Mirko Bosetti",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/mirkobosetti/CarJS/issues"
+	},
+	"homepage": "https://github.com/mirkobosetti/CarJS#readme",
+	"description": "Self-driving car simulation powered by neural networks and genetic algorithms",
+	"devDependencies": {
+		"eslint": "^9.37.0",
+		"prettier": "^3.6.2",
+		"vite": "^7.1.9"
+	}
+}

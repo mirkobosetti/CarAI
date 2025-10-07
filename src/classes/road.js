@@ -1,4 +1,6 @@
-class Road {
+import { lerp } from './utils.js'
+
+export class Road {
 	constructor(x, width, lanes = 3) {
 		this.x = x
 		this.width = width

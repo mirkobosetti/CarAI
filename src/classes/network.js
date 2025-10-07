@@ -1,3 +1,5 @@
+import { lerp } from './utils.js'
+
 class Level {
 	constructor(inputCount, outputCount) {
 		this.inputs = new Array(inputCount)
@@ -43,7 +45,7 @@ class Level {
 	}
 }
 
-class NeuralNetwork {
+export class NeuralNetwork {
 	constructor(neuronCounts) {
 		this.levels=[]
 		for (let i = 0; i < neuronCounts.length-1; i++) {

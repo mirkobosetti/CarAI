@@ -1,4 +1,9 @@
-class Car {
+import { Sensor } from './sensors.js'
+import { Controls } from './controls.js'
+import { NeuralNetwork } from './network.js'
+import { polysIntersect } from './utils.js'
+
+export class Car {
 	constructor(id, x, y, width, height, controlType, maxForwardSpeed = 1) {
 		this.id = id
 		this.x = x
@@ -36,29 +41,8 @@ class Car {
 	update(roadBorders, traffic) {
 		if (!this.damaged) {
 			this.#move()
-
-			// if this car is too far from the bestcar, it will be destroyed
-			if (this.y > bestCar.y + mainCanvas.height / 2) {
-				cars = cars.filter((c) => c.id != this.id)
-			}
-
 			this.polygon = this.#createPolygon()
 			this.damaged = this.#assessDamage(roadBorders, traffic)
-
-			if (this.damaged) {
-				// if all the remaininsg cars are damaged and wasBest is true, then the game is over, save and reload the page
-				if (
-					cars.filter((f) => f.damaged).length == cars.length &&
-					cars.filter((f) => f.wasBest).length == cars.length
-				) {
-					save()
-					window.location.reload()
-				}
-			}
-
-			if (bestCar.id == this.id) this.wasBest = true
-		} else {
-			if (!this.wasBest) cars = cars.filter((c) => c.id != this.id)
 		}
 
 		if (this.sensor) {
@@ -180,9 +164,10 @@ class Car {
 
 	/**
 	 * generates a car array used for training
+	 * @param {Road} road the road object
 	 * @returns {Car[]} the created cars
 	 */
-	static generateTrainingTraffic() {
+	static generateTrainingTraffic(road) {
 		const visualizer = [
 			[' ', 'X', 'X'],
 			[' ', ' ', ' '],

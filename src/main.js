@@ -1,3 +1,9 @@
+import './style.css'
+import { Car } from './classes/car.js'
+import { Road } from './classes/road.js'
+import { NeuralNetwork } from './classes/network.js'
+import { Visualizer } from './classes/visualizer.js'
+
 const mainCanvas = document.getElementById('mainCanvas')
 const networkCanvas = document.getElementById('networkCanvas')
 
@@ -17,7 +23,7 @@ const road = new Road(mainCanvas.width / 2, mainCanvas.width * 0.9, LANE_NUMBER)
 const CARS_NUMBER = 100
 let cars = generateCars(CARS_NUMBER)
 
-const traffic = Car.generateTrainingTraffic()
+const traffic = Car.generateTrainingTraffic(road)
 let bestCar = cars[0]
 
 if (localStorage.getItem('bestBrain')) {
@@ -27,12 +33,16 @@ if (localStorage.getItem('bestBrain')) {
 
 		// for all the cars except the best one
 		if (i != 0) {
-			NeuralNetwork.mutate(cars[i].brain, 0.005)
+			NeuralNetwork.mutate(cars[i].brain, 0.05)
 		}
 	}
 }
 
 animate()
+
+// Expose functions globally for buttons
+window.save = save
+window.discard = discard
 
 function save() {
 	localStorage.setItem('bestBrain', JSON.stringify(bestCar.brain))
@@ -45,7 +55,7 @@ function discard() {
 function generateCars(n) {
 	const cars = []
 	for (let i = 0; i < n; i++) {
-		cars.push(new Car(i, road.getLaneCenter(1), 100, 30, 50, 'AI', 2))
+		cars.push(new Car(i, road.getLaneCenter(1), 100, 30, 50, 'AI', 4))
 	}
 	return cars
 }
@@ -57,8 +67,35 @@ function animate(time) {
 		cars[i].update(road.borders, traffic)
 	}
 
-	// fitness
+	// fitness - trova la macchina migliore
 	bestCar = cars.find((car) => car.y == Math.min(...cars.map((m) => m.y)))
+
+	// Rimuovi le auto troppo lontane dalla bestCar
+	cars = cars.filter((car) => {
+		// Se la macchina è troppo lontana dalla migliore, rimuovila
+		if (car.y > bestCar.y + mainCanvas.height / 2 && !car.damaged) {
+			return false
+		}
+		// Se è danneggiata e non è mai stata la migliore, rimuovila
+		if (car.damaged && !car.wasBest) {
+			return false
+		}
+		return true
+	})
+
+	// Segna la macchina migliore
+	cars.forEach(car => {
+		if (car.id === bestCar.id) {
+			car.wasBest = true
+		}
+	})
+
+	// Se tutte le auto rimanenti sono danneggiate e sono state la migliore, salva e ricarica
+	if (cars.length > 0 && cars.every(car => car.damaged && car.wasBest)) {
+		save()
+		window.location.reload()
+		return
+	}
 
 	mainCanvas.height = window.innerHeight
 	networkCanvas.height = window.innerHeight

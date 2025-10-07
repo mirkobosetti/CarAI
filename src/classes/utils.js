@@ -1,6 +1,6 @@
-const lerp = (a, b, t) => a + (b - a) * t
+export const lerp = (a, b, t) => a + (b - a) * t
 
-function getIntersection(a, b, c, d) {
+export function getIntersection(a, b, c, d) {
 	const tTop = (d.x - c.x) * (a.y - c.y) - (d.y - c.y) * (a.x - c.x)
 	const uTop = (c.y - a.y) * (a.x - b.x) - (c.x - a.x) * (a.y - b.y)
 	const bottom = (d.y - c.y) * (b.x - a.x) - (d.x - c.x) * (b.y - a.y)
@@ -20,7 +20,7 @@ function getIntersection(a, b, c, d) {
 	return null
 }
 
-function polysIntersect(poly1, poly2) {
+export function polysIntersect(poly1, poly2) {
 	for (let i = 0; i < poly1.length; i++) {
 		for (let j = 0; j < poly2.length; j++) {
 			const touch = getIntersection(
@@ -35,7 +35,7 @@ function polysIntersect(poly1, poly2) {
 	return false
 }
 
-function getRGBA(value) {
+export function getRGBA(value) {
 	const alpha = Math.abs(value)
 	const R = value < 0 ? 0 : 255
 	const G = R
@@ -43,7 +43,7 @@ function getRGBA(value) {
 	return 'rgba(' + R + ',' + G + ',' + B + ',' + alpha + ')'
 }
 
-function getRandomColor() {
+export function getRandomColor() {
 	const hue = 290 + Math.random() * 260
 	return 'hsl(' + hue + ', 100%, 60%)'
 }
