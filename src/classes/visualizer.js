@@ -22,7 +22,7 @@ export class Visualizer {
 				levelTop,
 				width,
 				levelHeight,
-				i == network.levels.length - 1 ? ['A', 'W', 'D', 'S'] : []
+				i == network.levels.length - 1 ? ['W', 'A', 'D', 'S'] : []
 			)
 		}
 	}
@@ -80,12 +80,12 @@ export class Visualizer {
 				ctx.beginPath()
 				ctx.textAlign = 'center'
 				ctx.textBaseline = 'middle'
-				ctx.fillStyle = 'black'
-				ctx.strokeStyle = 'white'
-				ctx.font = nodeRadius * 1.5 + 'px Arial'
-				ctx.fillText(outputLabels[i], x, top + nodeRadius * 0.1)
-				ctx.lineWidth = 0.5
+				ctx.fillStyle = 'white'
+				ctx.strokeStyle = 'black'
+				ctx.font = 'bold ' + (nodeRadius * 1.8) + 'px Arial'
+				ctx.lineWidth = 3
 				ctx.strokeText(outputLabels[i], x, top + nodeRadius * 0.1)
+				ctx.fillText(outputLabels[i], x, top + nodeRadius * 0.1)
 			}
 		}
 	}

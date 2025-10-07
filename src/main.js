@@ -10,7 +10,7 @@ const networkCanvas = document.getElementById('networkCanvas')
 const LANE_NUMBER = 3
 
 mainCanvas.width = (LANE_NUMBER * 200) / 3
-networkCanvas.width = 300
+networkCanvas.width = 400 // Increased for better aspect ratio
 
 const mainCtx = mainCanvas.getContext('2d')
 const networkCtx = networkCanvas.getContext('2d')
@@ -304,7 +304,7 @@ function animate(time) {
 	updateStats()
 
 	mainCanvas.height = window.innerHeight - 120 // Account for header
-	networkCanvas.height = 400
+	networkCanvas.height = 500 // Increased height for better visualization
 
 	mainCtx.save()
 	mainCtx.translate(0, -bestCar.y + mainCanvas.height * 0.7)
