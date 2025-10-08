@@ -11,7 +11,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/mirkobosetti/CarJS.git"
+		"url": "git+https://github.com/mirkobosetti/CarAI.git"
 	},
 	"keywords": [
 		"neural-network",
@@ -23,9 +23,9 @@
 	"author": "Mirko Bosetti",
 	"license": "MIT",
 	"bugs": {
-		"url": "https://github.com/mirkobosetti/CarJS/issues"
+		"url": "https://github.com/mirkobosetti/CarAI/issues"
 	},
-	"homepage": "https://github.com/mirkobosetti/CarJS#readme",
+	"homepage": "https://github.com/mirkobosetti/CarAI#readme",
 	"description": "Self-driving car simulation powered by neural networks and genetic algorithms",
 	"devDependencies": {
 		"eslint": "^9.37.0",

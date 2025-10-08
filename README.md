@@ -57,8 +57,8 @@ _Watch 100 AI cars evolve their driving skills through genetic algorithms and ne
 
 ```bash
 # Clone the repository
-git clone https://github.com/mirkobosetti/CarJS.git
-cd CarJS
+git clone https://github.com/mirkobosetti/CarAI.git
+cd CarAI
 
 # Install dependencies
 npm install
